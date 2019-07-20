@@ -1,12 +1,13 @@
 package com.yk.dao;
 
+import com.spring.annotation.MyRepository;
 import com.yk.bean.User;
 
 import java.util.ArrayList;
 import java.util.List;
 
 
-
+@MyRepository
 public class UserDao {
 
     public List<User> getAll() {

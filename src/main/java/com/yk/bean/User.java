@@ -22,17 +22,17 @@ public class User {
         this.authType = authType;
     }
 
-    public enum AuthType{
-        ALARM("alarm"), TOPICWORD("topicword"), ALL("all"),VOICE("voice");
-
-        String authType;
-        AuthType(String authType) {
-            this.authType = authType;
-        }
-        public String getAuthType(){
-            return this.authType;
-        }
-    }
+//    public enum AuthType{
+//        ALARM("alarm"), TOPICWORD("topicword"), ALL("all"),VOICE("voice");
+//
+//        String authType;
+//        AuthType(String authType) {
+//            this.authType = authType;
+//        }
+//        public String getAuthType(){
+//            return this.authType;
+//        }
+//    }
 
 
 

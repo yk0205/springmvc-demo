@@ -6,20 +6,20 @@
     <display-name>Archetype Created Web Application</display-name>
 
     <!--启动时加载的servlet，servlet为单实例多线程-->
-
     <servlet>
-        <servlet-name>myspring</servlet-name>
-        <servlet-class>com.spring.servlet.YkDispatcherServlet</servlet-class>
+        <servlet-name>MySpringMVC</servlet-name>
+        <servlet-class>com.spring.servlet.MyDispatcherServlet</servlet-class>
         <init-param>
             <param-name>contextConfigLocation</param-name>
             <param-value>classpath*:spring-config.properties</param-value>
         </init-param>
         <load-on-startup>1</load-on-startup>
     </servlet>
+
     <!--配置映射到servlet的路径-->
     <servlet-mapping>
-        <servlet-name>myspring</servlet-name>
-        <url-pattern>/</url-pattern>
+        <servlet-name>MySpringMVC</servlet-name>
+        <url-pattern>/*</url-pattern>
     </servlet-mapping>
 
 

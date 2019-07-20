@@ -3,12 +3,13 @@ package com.spring.annotation;
 
 import java.lang.annotation.*;
 
-@Target(ElementType.FIELD)
+
+@Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-public @interface YKAutowried {
+public @interface MyRepository {
 
-
+    String value() default "";
 
 }
 
