@@ -1,12 +1,13 @@
 package com.spring.servlet;
 
 
-import com.spring.annotation.MyAutowried;
-import com.spring.annotation.MyController;
-import com.spring.annotation.MyRepository;
-import com.spring.annotation.MyService;
+import com.spring.annotation.*;
+
+import com.spring.core.MethodHandler;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.reflections.Reflections;
+import org.reflections.scanners.MethodParameterNamesScanner;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -17,6 +18,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
+
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,11 +39,13 @@ public class MyDispatcherServlet extends HttpServlet {
     private List<String> classNameList = new ArrayList<>();
 
     //当通过类型找不到对应实例时，通过名称注入(名称相同时会覆盖之前的值，这里就不处理了)
-    private Map<String, Object> IOCByName = new ConcurrentHashMap<>();
+    private Map<String, Object> IOCByName = new HashMap<>();
 
     //IOC容器,通过类型注入
-    private Map<String, Object> IOCByType = new ConcurrentHashMap<>();
+    private Map<String, Object> IOCByType = new HashMap<>();
 
+    //url 到controller方法的映射
+    private Map<String, MethodHandler> urlHandler = new HashMap<>();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -49,8 +54,10 @@ public class MyDispatcherServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-
+        //6、处理请求，执行相应的方法
+        doHandler(req, resp);
     }
+
 
     @Override
     public void init() throws ServletException {
@@ -68,6 +75,11 @@ public class MyDispatcherServlet extends HttpServlet {
         //4、实现@UVAutowried自动注入
         doAutowried();
 
+        //5、初始化HandlerMapping，根据url映射不同的controller方法
+        doMapping();
+
+        //6、处理请求，执行相应的方法
+        doHandler();
         logger.info("logger info servlet初始化完成");
     }
 
@@ -233,17 +245,134 @@ public class MyDispatcherServlet extends HttpServlet {
         });
     }
 
+    /**
+     * 5、初始化HandlerMapping，根据url映射不同的controller方法
+     */
+    private void doMapping() {
+        if (IOCByType.isEmpty() && IOCByName.isEmpty()) {
+            return;
+        }
+
+        IOCByType.entrySet().forEach(entry -> {
+            Class<?> clazz = entry.getValue().getClass();
+            //判断是否是controller
+            if (!clazz.isAnnotationPresent(MyController.class)) {
+                return;
+            }
+            String startUrl = "/";
+            //判断controller类上是否有MyRequestMapping注解，如果有则拼接url
+            if (clazz.isAnnotationPresent(MyRequestMapping.class)) {
+                MyRequestMapping requestMapping = clazz.getAnnotation(MyRequestMapping.class);
+                String value = requestMapping.value();
+                if (!StringUtils.isBlank(value)) {
+                    startUrl += value;
+                }
+                //遍历controller类中UVRequestMapping注解修饰的方法，添加到urlHandler中,完成url到方法的映射
+                Method[] methods = clazz.getDeclaredMethods();
+                // 拿到controller下所有的方法
+                for (Method method : methods) {
+                    // 判断方法上是否有requestMapping注解
+                    if (!method.isAnnotationPresent(MyRequestMapping.class)) {
+                        continue;
+                    }
+                    MyRequestMapping annotation = method.getAnnotation(MyRequestMapping.class);
+                    String url = startUrl + "/" +annotation.value().trim();
+                    //解决多个/重叠的问题
+                    url = url.replaceAll("/+", "/");
+                    MethodHandler handler = new MethodHandler();
+                    //放入方法
+                    handler.setMethod(method);
+                    try {
+                        //放入方法所在的controller
+                        handler.setObject(entry.getValue());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+
+                    //放入方法的参数列表
+                    List<String> params = doParamHandler(method);
+                    handler.setParams(params);
+                    urlHandler.put(url, handler);
+                }
+            }
+        });
+    }
+
+
+    /**
+     * 6、处理请求，执行相应的方法
+     */
+    private void doHandler(HttpServletRequest request, HttpServletResponse response) {
+
+
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    /**
+     *
+     * @param method
+     * @return
+     */
+    /**
+     * 在Java 8之前的版本，代码编译为class文件后， 方法参数的类型是固定的，但参数名称却丢失了， 这和动态语言严重依赖参数名称形成了鲜明对比。
+     * 现在Java 8开始在class文件中保留参数名，给反射带来了极大的便利。
+     * 使用reflections包，jdk7和jdk8都可用
+     **/
+    //处理method的参数
+    private List<String> doParamHandler(Method method) {
+        //使用reflections进行参数名的获取
+        Reflections reflections = new Reflections(new MethodParameterNamesScanner());
+        //参数名与顺序对应
+        List<String> paramNames = reflections.getMethodParamNames(method);
+        return paramNames;
+    }
 
     /**
      * 将类名的首字母替换小写
-     *
-     * @param name
+     * @param str
      * @return
      */
-    private String lowerFirstCase(String name) {
-        String firstChar = name.substring(0, 1);
-        String lowerChar = firstChar.toLowerCase();
-        return name.replaceFirst(firstChar, lowerChar);
+    private String lowerFirstCase(String str) {
+        char[] chars = str.toCharArray();
+        //ascii码计算
+        chars[0] += 32;
+        return String.valueOf(chars);
     }
 
 
