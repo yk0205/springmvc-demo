@@ -26,6 +26,7 @@ import java.util.*;
 
 
 /**
+ *  2019-07-21
  * dispatcherServlet
  */
 public class MyDispatcherServlet extends HttpServlet {
@@ -373,13 +374,14 @@ public class MyDispatcherServlet extends HttpServlet {
                     break;
                 }
             }
-            if(methodParamType.equals("int") || methodParamType.equals("Integer")){
-                for (Map.Entry<String, String[]> param : parameterMap.entrySet()) {
-                    String value = Arrays.toString(param.getValue()).replaceAll("\\[|\\]", "").replaceAll(",\\s", ",");
-                    paramValues[i] = value;
-                    break;
-                }
-            }
+            // 不清楚为什么传参是整型就报错。
+//            if(methodParamType.equals("int") || methodParamType.equals("Integer")){
+//                for (Map.Entry<String, String[]> param : parameterMap.entrySet()) {
+//                    String value = Arrays.toString(param.getValue()).replaceAll("\\[|\\]", "").replaceAll(",\\s", ",");
+//                    paramValues[i] = value;
+//                    break;
+//                }
+//            }
         }
         return paramValues;
 
