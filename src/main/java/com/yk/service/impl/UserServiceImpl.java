@@ -1,6 +1,7 @@
 package com.yk.service.impl;
 
-import com.spring.annotation.MyAutowried;
+
+import com.spring.annotation.MyAutowired;
 import com.spring.annotation.MyService;
 import com.yk.bean.User;
 import com.yk.dao.UserDao;
@@ -10,7 +11,7 @@ import java.util.List;
 @MyService
 public class UserServiceImpl implements UserService {
 
-    @MyAutowried
+    @MyAutowired
     private UserDao userDao;
 
     public List<User> getAllUser() {

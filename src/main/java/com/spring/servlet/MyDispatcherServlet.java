@@ -7,8 +7,6 @@ import com.spring.annotation.*;
 import com.spring.core.MethodHandler;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.reflections.Reflections;
-import org.reflections.scanners.MethodParameterNamesScanner;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -25,8 +23,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 
 /**
@@ -222,10 +218,10 @@ public class MyDispatcherServlet extends HttpServlet {
             for (Field field : fields) {
                 //private、protected修饰的变量可访问
                 field.setAccessible(true);
-                if (!field.isAnnotationPresent(MyAutowried.class)) {
+                if (!field.isAnnotationPresent(MyAutowired.class)) {
                     continue;
                 }
-                Object instance = null;
+                Object instance;
                 String beanTypeName = field.getType().getName();
                 String simpleName = lowerFirstCase(field.getType().getSimpleName());
                 //首先根据Type注入，没有实例时根据Name，否则抛出异常
@@ -359,21 +355,29 @@ public class MyDispatcherServlet extends HttpServlet {
         Map<String, String[]> parameterMap = request.getParameterMap();
         //方法的参数列表
         for (int i = 0; i < parameterTypes.length; i++) {
-            //根据参数名称，做某些处理
-            String requestParam = parameterTypes[i].getSimpleName();
-            if (requestParam.equals("HttpServletRequest")) {
+            //根据参数名称，做某y些处理
+            String methodParamType = parameterTypes[i].getSimpleName();
+            if (methodParamType.equals("HttpServletRequest")) {
                 //参数类型已明确，这边强转类型
                 paramValues[i] = request;
                 continue;
             }
-            if (requestParam.equals("HttpServletResponse")) {
+            if (methodParamType.equals("HttpServletResponse")) {
                 paramValues[i] = response;
                 continue;
             }
-            if (requestParam.equals("String")) {
+            if (methodParamType.equals("String")) {
                 for (Map.Entry<String, String[]> param : parameterMap.entrySet()) {
                     String value = Arrays.toString(param.getValue()).replaceAll("\\[|\\]", "").replaceAll(",\\s", ",");
                     paramValues[i] = value;
+                    break;
+                }
+            }
+            if(methodParamType.equals("int") || methodParamType.equals("Integer")){
+                for (Map.Entry<String, String[]> param : parameterMap.entrySet()) {
+                    String value = Arrays.toString(param.getValue()).replaceAll("\\[|\\]", "").replaceAll(",\\s", ",");
+                    paramValues[i] = value;
+                    break;
                 }
             }
         }
@@ -406,27 +410,7 @@ public class MyDispatcherServlet extends HttpServlet {
 
 
     /**
-     *
-     * @param method
-     * @return
-     */
-    /**
-     * 在Java 8之前的版本，代码编译为class文件后， 方法参数的类型是固定的，但参数名称却丢失了， 这和动态语言严重依赖参数名称形成了鲜明对比。
-     * 现在Java 8开始在class文件中保留参数名，给反射带来了极大的便利。
-     * 使用reflections包，jdk7和jdk8都可用
-     **/
-    //处理method的参数
-//    private List<String> doParamHandler(Method method) {
-//        //使用reflections进行参数名的获取
-//        Reflections reflections = new Reflections(new MethodParameterNamesScanner());
-//        //参数名与顺序对应
-//        List<String> paramNames = reflections.getMethodParamNames(method);
-//        return paramNames;
-//    }
-
-    /**
      * 将类名的首字母替换小写
-     *
      * @param str
      * @return
      */

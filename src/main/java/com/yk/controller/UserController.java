@@ -4,8 +4,8 @@ package com.yk.controller;
 import com.spring.annotation.*;
 import com.yk.bean.User;
 import com.yk.service.UserService;
-
-
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
 
@@ -13,7 +13,7 @@ import java.util.List;
 @MyRequestMapping("/user")
 public class UserController {
 
-    @MyAutowried
+    @MyAutowired
     private UserService userService;
 
     @MyResponseBody
@@ -33,15 +33,18 @@ public class UserController {
 
     @MyResponseBody
     @MyRequestMapping("/getUserById")
-    public User getUserById(@MyRequestParam(value = "id") int id) {
+    public User getUserById(HttpServletRequest request,
+                            HttpServletResponse response,
+                            @MyRequestParam("param") String param) {
 
         User user = null;
         try {
-            user = userService.getUserById(id);
+            user = userService.getUserById(Integer.valueOf(param));
         } catch (Exception e) {
             e.printStackTrace();
         }
         return user;
+
     }
 
 }
