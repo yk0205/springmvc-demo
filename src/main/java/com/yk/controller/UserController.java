@@ -1,10 +1,7 @@
 package com.yk.controller;
 
 
-import com.spring.annotation.MyAutowried;
-import com.spring.annotation.MyController;
-import com.spring.annotation.MyRequestMapping;
-import com.spring.annotation.MyResponseBody;
+import com.spring.annotation.*;
 import com.yk.bean.User;
 import com.yk.service.UserService;
 
@@ -21,9 +18,29 @@ public class UserController {
 
     @MyResponseBody
     @MyRequestMapping("/getAllUser")
-    public List<User> getAllUser(){
-        List<User> user = null;
-        user = userService.getAllUser();
+    public List<User> getAllUser() {
+
+        List<User> userList = null;
+
+        try {
+            userList = userService.getAllUser();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return userList;
+    }
+
+
+    @MyResponseBody
+    @MyRequestMapping("/getUserById")
+    public User getUserById(@MyRequestParam(value = "id") int id) {
+
+        User user = null;
+        try {
+            user = userService.getUserById(id);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return user;
     }
 

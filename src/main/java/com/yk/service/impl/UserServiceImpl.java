@@ -5,9 +5,8 @@ import com.spring.annotation.MyService;
 import com.yk.bean.User;
 import com.yk.dao.UserDao;
 import com.yk.service.UserService;
-
-
 import java.util.List;
+
 @MyService
 public class UserServiceImpl implements UserService {
 
@@ -16,5 +15,10 @@ public class UserServiceImpl implements UserService {
 
     public List<User> getAllUser() {
         return userDao.getAll();
+    }
+
+    @Override
+    public User getUserById(int id) {
+        return userDao.selectById(id);
     }
 }

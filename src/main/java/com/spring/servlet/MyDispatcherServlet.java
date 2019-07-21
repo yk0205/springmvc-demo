@@ -1,6 +1,7 @@
 package com.spring.servlet;
 
 
+import com.alibaba.fastjson.JSON;
 import com.spring.annotation.*;
 
 import com.spring.core.MethodHandler;
@@ -17,12 +18,15 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.lang.reflect.Field;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 
 /**
@@ -78,10 +82,9 @@ public class MyDispatcherServlet extends HttpServlet {
         //5、初始化HandlerMapping，根据url映射不同的controller方法
         doMapping();
 
-        //6、处理请求，执行相应的方法
-        doHandler();
         logger.info("logger info servlet初始化完成");
     }
+
 
     /**
      * 1、加载配置
@@ -276,7 +279,7 @@ public class MyDispatcherServlet extends HttpServlet {
                         continue;
                     }
                     MyRequestMapping annotation = method.getAnnotation(MyRequestMapping.class);
-                    String url = startUrl + "/" +annotation.value().trim();
+                    String url = startUrl + "/" + annotation.value().trim();
                     //解决多个/重叠的问题
                     url = url.replaceAll("/+", "/");
                     MethodHandler handler = new MethodHandler();
@@ -288,10 +291,6 @@ public class MyDispatcherServlet extends HttpServlet {
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
-
-                    //放入方法的参数列表
-                    List<String> params = doParamHandler(method);
-                    handler.setParams(params);
                     urlHandler.put(url, handler);
                 }
             }
@@ -302,46 +301,108 @@ public class MyDispatcherServlet extends HttpServlet {
     /**
      * 6、处理请求，执行相应的方法
      */
-    private void doHandler(HttpServletRequest request, HttpServletResponse response) {
+    private void doHandler(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        boolean jsonResult = false;
+        String uri = request.getRequestURI();
+        PrintWriter writer = response.getWriter();
+        //没有映射的url
+        if (!urlHandler.containsKey(uri)) {
+            writer.write("404 Not Found");
+            return;
+        }
+        //获取url对应的method包装类
+        MethodHandler methodHandler = urlHandler.get(uri);
+        //处理url的method
+        Method method = methodHandler.getMethod();
+        //method所在的controller
+        Object instance = methodHandler.getObject();
+        if (instance.getClass().isAnnotationPresent(MyResponseBody.class) || method.isAnnotationPresent(MyResponseBody.class)) {
+            jsonResult = true;
+        }
 
+        try {
+            //获取method的参数列表'
+            Object[] paramValues = doParamHandler(method, request, response);
+            //执行方法，处理，返回结果
+            Object result = method.invoke(instance, paramValues);
+            //返回json(使用阿里的fastJson)
+            if (jsonResult) {
+                writer.write(JSON.toJSONString(result));
+            } else { //返回视图
+                doResolveView((String) result, request, response);
+            }
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+            //方法执行异常，返回500
+            writer.write("500 Internal Server Error");
+            return;
+        }
+    }
 
+    /**
+     * 6、获取方法参数
+     *
+     * @param method
+     * @param request
+     * @param response
+     * @return
+     */
+    private Object[] doParamHandler(Method method, HttpServletRequest request, HttpServletResponse response) {
+
+        //获取方法的参数类型
+        Class<?>[] parameterTypes = method.getParameterTypes();
+        //保存参数值
+        Object[] paramValues = new Object[parameterTypes.length];
+        //获取请求的参数
+        Map<String, String[]> parameterMap = request.getParameterMap();
+        //方法的参数列表
+        for (int i = 0; i < parameterTypes.length; i++) {
+            //根据参数名称，做某些处理
+            String requestParam = parameterTypes[i].getSimpleName();
+            if (requestParam.equals("HttpServletRequest")) {
+                //参数类型已明确，这边强转类型
+                paramValues[i] = request;
+                continue;
+            }
+            if (requestParam.equals("HttpServletResponse")) {
+                paramValues[i] = response;
+                continue;
+            }
+            if (requestParam.equals("String")) {
+                for (Map.Entry<String, String[]> param : parameterMap.entrySet()) {
+                    String value = Arrays.toString(param.getValue()).replaceAll("\\[|\\]", "").replaceAll(",\\s", ",");
+                    paramValues[i] = value;
+                }
+            }
+        }
+        return paramValues;
 
     }
 
+    /**
+     * 7、视图解析，返回视图
+     *
+     * @param indexView
+     * @param request
+     * @param response
+     */
+    private void doResolveView(String indexView, HttpServletRequest request, HttpServletResponse response) {
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        try {
+            // 视图前缀
+            String prefix = properties.getProperty("view.prefix");
+            // 视图后缀
+            String suffix = properties.getProperty("view.suffix");
+            String view = (prefix + indexView + suffix).trim().replaceAll("/+", "/");
+            request.getRequestDispatcher(view).forward(request, response);
+        } catch (ServletException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
 
     /**
@@ -355,16 +416,17 @@ public class MyDispatcherServlet extends HttpServlet {
      * 使用reflections包，jdk7和jdk8都可用
      **/
     //处理method的参数
-    private List<String> doParamHandler(Method method) {
-        //使用reflections进行参数名的获取
-        Reflections reflections = new Reflections(new MethodParameterNamesScanner());
-        //参数名与顺序对应
-        List<String> paramNames = reflections.getMethodParamNames(method);
-        return paramNames;
-    }
+//    private List<String> doParamHandler(Method method) {
+//        //使用reflections进行参数名的获取
+//        Reflections reflections = new Reflections(new MethodParameterNamesScanner());
+//        //参数名与顺序对应
+//        List<String> paramNames = reflections.getMethodParamNames(method);
+//        return paramNames;
+//    }
 
     /**
      * 将类名的首字母替换小写
+     *
      * @param str
      * @return
      */
