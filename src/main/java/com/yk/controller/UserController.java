@@ -35,7 +35,9 @@ public class UserController {
     @MyRequestMapping("/getUserById")
     public User getUserById(HttpServletRequest request,
                             HttpServletResponse response,
-                            @MyRequestParam("param") String param) {
+                            @MyRequestParam("param") String param ,
+                            @MyRequestParam("id") Integer id
+    ) {
 
         User user = null;
         try {

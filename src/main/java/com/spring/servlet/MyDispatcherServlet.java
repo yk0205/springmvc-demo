@@ -2,9 +2,11 @@ package com.spring.servlet;
 
 
 import com.alibaba.fastjson.JSON;
+import com.google.common.collect.Sets;
 import com.spring.annotation.*;
 
 import com.spring.core.MethodHandler;
+import com.yk.handlerAdapter.HandlerAdapterService;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -17,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 
 import java.lang.reflect.InvocationTargetException;
@@ -141,6 +144,8 @@ public class MyDispatcherServlet extends HttpServlet {
             return;
         }
         try {
+            // 排除一个接口多个实现的实例
+            Set<Class<?>> excludeMoreImplInterface = Sets.newHashSet();
             for (String className : classNameList) {
                 //反射获取实例对象
                 Class<?> clazz = Class.forName(className);
@@ -183,11 +188,21 @@ public class MyDispatcherServlet extends HttpServlet {
                     // 如果接口的情况
                     Class<?>[] interfaces = clazz.getInterfaces();
                     for (Class<?> interf : interfaces) {
+                        if(IOCByType.containsKey(interf.getName())){
+                            excludeMoreImplInterface.add(interf);
+                        }
                         IOCByName.put(lowerFirstCase(interf.getSimpleName()), instance);
                         IOCByType.put(interf.getName(), instance);
                     }
                 }
             }
+            // 去除一个接口多个实现的实例
+            excludeMoreImplInterface.forEach(entry ->{
+                IOCByType.remove(entry.getName());
+                IOCByName.remove(lowerFirstCase(entry.getSimpleName()));
+            });
+
+
         } catch (ClassNotFoundException e) {
             if (logger.isInfoEnabled()) {
                 logger.error("ClassNotFoundException error  ", e);
@@ -294,6 +309,25 @@ public class MyDispatcherServlet extends HttpServlet {
         });
     }
 
+    private String[] getMethodParameterNamesByAnnotation(Method method) {
+
+        Annotation[][] parameterAnnotations = method.getParameterAnnotations();
+        if (parameterAnnotations == null || parameterAnnotations.length == 0) {
+            return null;
+        }
+        String[] parameterNames = new String[parameterAnnotations.length];
+        int i = 0;
+        for (Annotation[] parameterAnnotation : parameterAnnotations) {
+            for (Annotation annotation : parameterAnnotation) {
+                if (annotation instanceof MyRequestParam) {
+                    MyRequestParam param = (MyRequestParam) annotation;
+                    parameterNames[i++] = param.value();
+                }
+            }
+        }
+        return parameterNames;
+    }
+
 
     /**
      * 6、处理请求，执行相应的方法
@@ -319,7 +353,9 @@ public class MyDispatcherServlet extends HttpServlet {
 
         try {
             //获取method的参数列表'
-            Object[] paramValues = doParamHandler(method, request, response);
+            // Object[] paramValues = doParamHandler(method, request, response);
+            HandlerAdapterService ha = (HandlerAdapterService) IOCByName.get("myHandlerAdapter");
+            Object[]  paramValues = ha.handle(request, response, method, IOCByName);
             //执行方法，处理，返回结果
             Object result = method.invoke(instance, paramValues);
             //返回json(使用阿里的fastJson)
@@ -347,6 +383,11 @@ public class MyDispatcherServlet extends HttpServlet {
      * @return
      */
     private Object[] doParamHandler(Method method, HttpServletRequest request, HttpServletResponse response) {
+
+
+
+
+
 
         //获取方法的参数类型
         Class<?>[] parameterTypes = method.getParameterTypes();
