@@ -19,8 +19,6 @@ public class RequestParamArgumentResolver implements ArgumentResolver {
 
     @Override
     public boolean support(Class<?> type, int paramIndex, Method method) {
-        // type = class java.lang.String
-        // @CustomRequestParam("name")String name
         //获取当前方法的参数
         Annotation[][] an = method.getParameterAnnotations();
         Annotation[] paramAns = an[paramIndex];
@@ -49,12 +47,19 @@ public class RequestParamArgumentResolver implements ArgumentResolver {
             if (MyRequestParam.class.isAssignableFrom(paramAn.getClass())) {
                 MyRequestParam cr = (MyRequestParam) paramAn;
                 String value = cr.value();
-                if (type.equals(String.class)){
-                    return  request.getParameter(value);
-                }else if(type.equals(Integer.class)){
-                    return Integer.valueOf(request.getParameter(value));
-                }else if(type.equals(int.class)){
-                    return Integer.valueOf(request.getParameter(value));
+                switch (type.getSimpleName()) {
+                    case "String":
+                        return request.getParameter(value);
+                    case "Integer":
+                        return Integer.valueOf(request.getParameter(value));
+                    case "int":
+                        return Integer.valueOf(request.getParameter(value));
+                    case "long":
+                        return Long.valueOf(request.getParameter(value));
+                    case "Long":
+                        return Long.valueOf(request.getParameter(value));
+                    default:
+                        return request.getParameter(value);
                 }
             }
         }

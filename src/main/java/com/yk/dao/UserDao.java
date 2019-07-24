@@ -19,6 +19,7 @@ public class UserDao {
         list.add(new User(2, "a"));
         list.add(new User(3, "b"));
         list.add(new User(4, "c"));
+        list.add(new User(28, "c"));
     }
 
     public List<User> getAll() {
