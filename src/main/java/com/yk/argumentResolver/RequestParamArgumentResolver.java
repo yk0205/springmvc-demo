@@ -49,8 +49,13 @@ public class RequestParamArgumentResolver implements ArgumentResolver {
             if (MyRequestParam.class.isAssignableFrom(paramAn.getClass())) {
                 MyRequestParam cr = (MyRequestParam) paramAn;
                 String value = cr.value();
-
-                return request.getParameter(value);
+                if (type.equals(String.class)){
+                    return  request.getParameter(value);
+                }else if(type.equals(Integer.class)){
+                    return Integer.valueOf(request.getParameter(value));
+                }else if(type.equals(int.class)){
+                    return Integer.valueOf(request.getParameter(value));
+                }
             }
         }
         return null;

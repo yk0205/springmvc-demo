@@ -33,19 +33,31 @@ public class UserController {
 
     @MyResponseBody
     @MyRequestMapping("/getUserById")
-    public User getUserById(HttpServletRequest request,
-                            HttpServletResponse response,
-                            @MyRequestParam("param") String param ,
-                            @MyRequestParam("id") Integer id
-    ) {
+    public User getUserById(HttpServletRequest request, HttpServletResponse response,
+                            @MyRequestParam("id") Integer id   ) {
 
         User user = null;
         try {
-            user = userService.getUserById(Integer.valueOf(param));
+            user = userService.getUserById(id);
         } catch (Exception e) {
             e.printStackTrace();
         }
         return user;
+
+    }
+    @MyResponseBody
+    @MyRequestMapping("/query")
+    public String query(HttpServletRequest request, HttpServletResponse response,
+                            @MyRequestParam("id") Integer id,
+                            @MyRequestParam("name") String name ) {
+
+        String str = null;
+        try {
+            str = userService.query(id,name);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return str;
 
     }
 

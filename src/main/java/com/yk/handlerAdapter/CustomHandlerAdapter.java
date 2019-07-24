@@ -39,18 +39,13 @@ public class CustomHandlerAdapter implements HandlerAdapterService {
             //哪个参数对应了哪个参数解析类,用策略模式来找
             for (Map.Entry<String, Object> entry : argumentResolvers.entrySet()) {
                 ArgumentResolver ar = (ArgumentResolver)entry.getValue();
-
                 if (ar.support(paramClazz, paramIndex, method)) {
-                    args[i++] = ar.argumentResolver(req,
-                            resp,
-                            paramClazz,
-                            paramIndex,
-                            method);
+                    args[i++] = ar.argumentResolver(req, resp, paramClazz, paramIndex, method);
+                    break;
                 }
             }
             paramIndex++;
         }
-
         return args;
     }
 

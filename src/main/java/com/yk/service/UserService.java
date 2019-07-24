@@ -11,5 +11,6 @@ public interface UserService {
 
     User getUserById(int id);
 
+    String query(Integer id, String name);
 
 }

@@ -309,25 +309,6 @@ public class MyDispatcherServlet extends HttpServlet {
         });
     }
 
-    private String[] getMethodParameterNamesByAnnotation(Method method) {
-
-        Annotation[][] parameterAnnotations = method.getParameterAnnotations();
-        if (parameterAnnotations == null || parameterAnnotations.length == 0) {
-            return null;
-        }
-        String[] parameterNames = new String[parameterAnnotations.length];
-        int i = 0;
-        for (Annotation[] parameterAnnotation : parameterAnnotations) {
-            for (Annotation annotation : parameterAnnotation) {
-                if (annotation instanceof MyRequestParam) {
-                    MyRequestParam param = (MyRequestParam) annotation;
-                    parameterNames[i++] = param.value();
-                }
-            }
-        }
-        return parameterNames;
-    }
-
 
     /**
      * 6、处理请求，执行相应的方法
@@ -374,59 +355,6 @@ public class MyDispatcherServlet extends HttpServlet {
         }
     }
 
-    /**
-     * 6、获取方法参数
-     *
-     * @param method
-     * @param request
-     * @param response
-     * @return
-     */
-    private Object[] doParamHandler(Method method, HttpServletRequest request, HttpServletResponse response) {
-
-
-
-
-
-
-        //获取方法的参数类型
-        Class<?>[] parameterTypes = method.getParameterTypes();
-        //保存参数值
-        Object[] paramValues = new Object[parameterTypes.length];
-        //获取请求的参数
-        Map<String, String[]> parameterMap = request.getParameterMap();
-        //方法的参数列表
-        for (int i = 0; i < parameterTypes.length; i++) {
-            //根据参数名称，做某y些处理
-            String methodParamType = parameterTypes[i].getSimpleName();
-            if (methodParamType.equals("HttpServletRequest")) {
-                //参数类型已明确，这边强转类型
-                paramValues[i] = request;
-                continue;
-            }
-            if (methodParamType.equals("HttpServletResponse")) {
-                paramValues[i] = response;
-                continue;
-            }
-            if (methodParamType.equals("String")) {
-                for (Map.Entry<String, String[]> param : parameterMap.entrySet()) {
-                    String value = Arrays.toString(param.getValue()).replaceAll("\\[|\\]", "").replaceAll(",\\s", ",");
-                    paramValues[i] = value;
-                    break;
-                }
-            }
-            // 不清楚为什么传参是整型就报错。
-//            if(methodParamType.equals("int") || methodParamType.equals("Integer")){
-//                for (Map.Entry<String, String[]> param : parameterMap.entrySet()) {
-//                    String value = Arrays.toString(param.getValue()).replaceAll("\\[|\\]", "").replaceAll(",\\s", ",");
-//                    paramValues[i] = value;
-//                    break;
-//                }
-//            }
-        }
-        return paramValues;
-
-    }
 
     /**
      * 7、视图解析，返回视图
