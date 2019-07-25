@@ -333,8 +333,7 @@ public class MyDispatcherServlet extends HttpServlet {
         }
 
         try {
-            //获取method的参数列表'
-            // Object[] paramValues = doParamHandler(method, request, response);
+            //获取method的参数列表'  策略模式
             HandlerAdapterService ha = (HandlerAdapterService) IOCByName.get("myHandlerAdapter");
             Object[]  paramValues = ha.handle(request, response, method, IOCByName);
             //执行方法，处理，返回结果

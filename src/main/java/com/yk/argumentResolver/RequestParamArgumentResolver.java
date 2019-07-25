@@ -6,6 +6,7 @@ import com.spring.annotation.MyService;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 
@@ -47,19 +48,27 @@ public class RequestParamArgumentResolver implements ArgumentResolver {
             if (MyRequestParam.class.isAssignableFrom(paramAn.getClass())) {
                 MyRequestParam cr = (MyRequestParam) paramAn;
                 String value = cr.value();
-                switch (type.getSimpleName()) {
-                    case "String":
-                        return request.getParameter(value);
-                    case "Integer":
-                        return Integer.valueOf(request.getParameter(value));
-                    case "int":
-                        return Integer.valueOf(request.getParameter(value));
-                    case "long":
-                        return Long.valueOf(request.getParameter(value));
-                    case "Long":
-                        return Long.valueOf(request.getParameter(value));
-                    default:
-                        return request.getParameter(value);
+                try {
+                    switch (type.getSimpleName()) {
+                        case "String":
+                            return request.getParameter(value);
+                        case "Integer":
+                            return Integer.valueOf(request.getParameter(value));
+                        case "int":
+                            return Integer.valueOf(request.getParameter(value));
+                        case "long":
+                            return Long.valueOf(request.getParameter(value));
+                        case "Long":
+                            return Long.valueOf(request.getParameter(value));
+                        default:
+                            return request.getParameter(value);
+                    }
+                }catch (Exception e){
+                    try {
+                        response.getWriter().write("500!! conversion Exception " + e);
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    }
                 }
             }
         }

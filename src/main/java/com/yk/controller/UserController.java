@@ -49,11 +49,12 @@ public class UserController {
     @MyRequestMapping("/query")
     public String query(HttpServletRequest request, HttpServletResponse response,
                             @MyRequestParam("id") Integer id,
-                            @MyRequestParam("name") String name ) {
+                            @MyRequestParam("name") String name,
+                            @MyRequestParam("departmentId") Long departmentId) {
 
         String str = null;
         try {
-            str = userService.query(id,name);
+            str = userService.query(id,name,departmentId);
         } catch (Exception e) {
             e.printStackTrace();
         }

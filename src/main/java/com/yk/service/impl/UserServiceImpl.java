@@ -25,7 +25,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public String query(Integer id, String name) {
-        return "编号" + id + "名字" + name;
+    public String query(Integer id, String name, Long department) {
+        return "id=" + id + " name=" + name +" deparmentId=" + department;
     }
 }
